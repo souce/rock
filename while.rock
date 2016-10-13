@@ -1,0 +1,16 @@
+girlsBalance,myBalance,turn,count = 1000, 1000, 0, 1
+while count <= 999
+do
+	if turn % 2 == 0
+	then
+		girlsBalance = girlsBalance + count
+		myBalance = myBalance - count
+	else then
+		girlsBalance = girlsBalance - count
+		myBalance = myBalance + count
+	end
+	count = count+1
+	turn = turn+1
+end
+print(girlsBalance/10)
+print(myBalance/10)

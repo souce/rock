@@ -1,0 +1,29 @@
+a = 100
+a=a-1
+b="testString"
+a=add(a)
+c=a
+print(c)
+if 1-2 < 0 then
+	print(111)
+elif 2-3  then
+	print(222)
+elif 1 then
+	if 3 then
+		print(b+1)
+	end
+	print(2444)
+else then
+	print(444)
+end
+
+if 1 then
+	print(a+1000)
+end
+
+if 2-3 then
+	print(a+2000)
+else then
+	print(a +3000)
+end
+
