@@ -1,0 +1,6 @@
+l = ListNew()
+ListPushFront(l, "1")
+ListPushBack(l, "2")
+i = ListPopFront(l)
+j = ListPopBack(l)
+print(i + " and " + j)

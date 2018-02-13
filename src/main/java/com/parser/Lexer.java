@@ -12,7 +12,7 @@ import main.java.com.exception.UnexpectedCodeException;
 
 public class Lexer {
     public static String regexPat
-        = "\\s*((//.*)|([0-9]+)|\"([^\"]*)\"|(if|elif|else|then|while|do|end|\\(|\\)|\\+|-|\\*|/|,|%|<=|>=|<|>|==|!=|=)|([A-Za-z0-9])*)?";
+        = "\\s*((//.*)|([0-9]+)|\"([^\"]*)\"|(function|return|if|elif|else|then|while|do|end|\\(|\\)|\\+|-|\\*|/|,|\\{|\\}|%|<=|>=|<|>|==|!=|=)|([A-Za-z0-9])*)?";
     private Pattern pattern = Pattern.compile(regexPat);
     public ArrayList<Token> queue = new ArrayList<Token>();
     private boolean hasMore;

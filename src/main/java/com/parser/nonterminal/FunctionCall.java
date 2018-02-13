@@ -10,7 +10,7 @@ import main.java.com.parser.Token;
 import main.java.com.parser.ast.ASTree;
 
 /*
- * functioncall := name "(" exprList ")"
+ * functioncall := name "(" [exprList] ")"
  */
 public class FunctionCall implements IParser{
 	
@@ -27,14 +27,13 @@ public class FunctionCall implements IParser{
 			if("(".equals(t.getText())){
 				back.push(lexer.read());
 				funcTree.addChild(t);
-				if(exprList.parser(lexer, funcTree)){
-					t = lexer.peek(0);
-					if(")".equals(t.getText())){
-						back.push(lexer.read());
-						funcTree.addChild(t);
-						tree.addChild(funcTree);
-						return true;
-					}
+				exprList.parser(lexer, funcTree);
+				t = lexer.peek(0);
+				if(")".equals(t.getText())){
+					back.push(lexer.read());
+					funcTree.addChild(t);
+					tree.addChild(funcTree);
+					return true;
 				}
 			}
 		}

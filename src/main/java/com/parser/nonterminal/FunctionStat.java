@@ -8,12 +8,14 @@ import main.java.com.parser.Token;
 import main.java.com.parser.ast.ASTree;
 
 /*
- * function := function  '(' [namelist] ')'  block end
+ * function := function  name '(' [namelist] ')' '{' block  [returnStat]'}'
  */
 public class FunctionStat implements IParser{
 	
+	public IParser name;
 	public IParser nameList;
 	public IParser block;
+	public IParser returnStat;
 	
 	@Override
 	public boolean parser(Lexer lexer, ASTree tree) throws SyntaxErrorException, UnexpectedCodeException, ReadCodeException{
@@ -22,20 +24,29 @@ public class FunctionStat implements IParser{
 		if("function".equals(t.getText())){
 			lexer.read();
 			funTree.setToken(t);
-			tree.addChild(funTree);
-			t = lexer.peek(0);
-			if("(".equals(t.getText())){
-				lexer.read();
-				if(nameList.parser(lexer, funTree)){
+			ASTree nameTree = new ASTree();
+			if(name.parser(lexer, nameTree)){
+				funTree.addChild(nameTree);
+				t = lexer.peek(0);
+				if("(".equals(t.getText())){
+					lexer.read();
+					nameList.parser(lexer, funTree);
 					t = lexer.peek(0);
 					if(")".equals(t.getText())){
 						lexer.read();
-						if(block.parser(lexer, funTree)){
-							t = lexer.peek(0);
-							if("end".equals(t.getText())){
-								lexer.read();
-								funTree.addChild(t);
-								return true;
+						t = lexer.peek(0);
+						if("{".equals(t.getText())){
+							lexer.read();
+							funTree.addChild(t);
+							if(block.parser(lexer, funTree)){
+								returnStat.parser(lexer, funTree);
+								t = lexer.peek(0);
+								if("}".equals(t.getText())){
+									lexer.read();
+									funTree.addChild(t);
+									tree.addChild(funTree);
+									return true;
+								}
 							}
 						}
 					}

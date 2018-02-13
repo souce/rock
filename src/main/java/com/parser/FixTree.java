@@ -99,9 +99,25 @@ public class FixTree {
 				}
 				break;
 			}
+			case"function":
+				//函数
+				ASTree funcName = tree.child(0);
+				tree.rmChild(0);
+				
+				ASTree funcBeginNode = new ASTree(new FuncBeginToken(lineNumber));
+				tree.setChild(0, funcBeginNode);
+				
+				ASTree funcEndNode = new ASTree(new FuncEndToken(lineNumber));
+				tree.setChild(tree.numChildren()-1, funcEndNode);
+				
+				tree.addChild(tree.numChildren(), funcName);
+				
+				tree.setToken(null);
+				break;
 			default:
+				//函数的调用
 				if(null != tree.getToken() && tree.getToken().isNouns()){
-					if(tree.numChildren() <= 2)break;
+					if(tree.numChildren() < 2)break;
 					if("(".equals(tree.child(0).getToken().getText()) && 
 					   ")".equals(tree.child(tree.numChildren()-1).getToken().getText())){
 						//is function
@@ -130,6 +146,30 @@ public class FixTree {
 		}
 	}
 	
+}
+
+/*
+ * 函数的开头
+ */
+class FuncBeginToken extends Token{
+    private String literal = "funcBegin";
+    public FuncBeginToken(int line) {
+        super(line);
+    }
+    public boolean isIdentifier() { return true; } //定义，并非普通字符串
+    public String getText() { return literal; }
+}
+
+/*
+ * 函数的结尾
+ */
+class FuncEndToken extends Token{
+    private String literal = "funcEnd";
+    public FuncEndToken(int line) {
+        super(line);
+    }
+    public boolean isIdentifier() { return true; } //定义，并非普通字符串
+    public String getText() { return literal; }
 }
 
 /*

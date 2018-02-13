@@ -94,8 +94,8 @@ public class Order {
 		CALLFUNC,		//调用函数
 		
 		HALT, 			//文件正常执行完毕
-		STOREGLOBAL, 	//将栈顶的数据保存到全局变量表中
-		PUSHGLOBAL, 	//以栈顶的数据为key，从全局变量表中查询，并将结果存放在栈顶
+		STOREVAR, 	//将栈顶的数据保存到作用域变量表中
+		PUSHVAR, 	//以栈顶的数据为key，从作用域变量表中查询，并将结果存放在栈顶
 		MARK
 	}
 	
@@ -119,10 +119,12 @@ public class Order {
 			return value!=null?"IFJMP:"+value.toString():"none";
 		case UPJMP:
 			return value!=null?"UPJMP:"+value.toString():"none";
-		case PUSHGLOBAL:
-			return value!=null?"PUSHGLOBAL:"+value.toString():"none";
-		case STOREGLOBAL:
-			return value!=null?"STOREGLOBAL:"+value.toString():"none";
+		case PUSHVAR:
+			return value!=null?"PUSHVAR:"+value.toString():"none";
+		case STOREVAR:
+			return value!=null?"STOREVAR:"+value.toString():"none";
+		case MARK:
+			return "mark";
 		default:
 			break;
 		}

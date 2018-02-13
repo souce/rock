@@ -7,19 +7,24 @@ import main.java.com.parser.Lexer;
 import main.java.com.parser.ast.ASTree;
 
 /*
- 	 stat := ifstat | whilestat | functionstat | FunctionCall | entrust | value | stat{stat} 
- 	 
- 	 
- 	 stat ::=  namelist '=' explist |
-     functioncall |
-     do block end |
-     while exp do block end |
-     repeat block until exp |
-     if expr then block {elseif exp then block} [else block] end |
-     for Name '=' exp ',' exp [',' exp] do block end |
-     for namelist in explist do block end |
-     function  '(' [namelist] ')'  block end|
-     local namelist ['=' explist]
+ 	stat := ifstat | whilestat | functionstat | FunctionCall | entrust | value | stat{stat} 
+ 	
+ 	AAndS := MAndD { ( + | - )  MAndD }
+	MAndD := mod { ( * | / )  mod }
+	mod := factor {‘%’ factor}
+	block := {stat [';']} [laststat [';']]
+	factor := number | name | string | '(' expr ')'
+	expr := AAndS { (‘<‘|’>’|’<=‘|’>=‘|’==')  AAndS}
+	explist := {exp ','} exp
+	functioncall := name "(" [exprList] ")"
+	ifstat := "if" expr "then" block {"elif" expr "then" block} ["else" block] "end"
+	whilestat := while {exp | name} do block end
+	laststat := return [exprlist]
+	entrust := namelist '=' {functionCall | explist}
+	name := noun
+	namelist := Name {',' Name}
+	string := string
+	stat := ifstat | whilestat | functionstat | FunctionCall | entrust | value | stat{stat} 
  */
 public class Stat implements IParser{
 	
@@ -50,9 +55,9 @@ public class Stat implements IParser{
 		else if(whileStat.parser(lexer, statTree)){
 			return true;
 		}
-//		else if(functionStat.parser(lexer, statTree)){
-//			return true;
-//		}
+		else if(functionStat.parser(lexer, statTree)){
+			return true;
+		}
 		else if(functionCall.parser(lexer, statTree)){
 			return true;
 		}

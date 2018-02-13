@@ -3,41 +3,85 @@ package main.java.com.vm;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
+import main.java.com.exception.ExecureException;
 import main.java.com.lib.FunctionValue;
 import main.java.com.lib.IFunction;
+import main.java.com.vm.Order.OrderOpType;
 
 public class StackVM {
-	private HashMap<String, Object> globalMap = new HashMap<>();
+	//默认的全局的执行上下文，也就是作用域链的开端
+	private ExecutionContext globalExecutionContext = null;
+	private ExecutionContext currentExecutionContext = null;
+	
+	private HashMap<String, Object> extGlobalMap = new HashMap<>(); //扩展的特殊全局变量
+	
 	private Stack<Object> vmStack = new Stack<>();
 	
+	protected StackVM vm;
+	
+	public StackVM(){
+		List<ExecutionContext> scopeChain = new ArrayList<>();
+		globalExecutionContext = new ExecutionContext(scopeChain);
+		vm = this;
+	}
+	
 	public void registerFunction(String name, IFunction function){
-		globalMap.put(name, function);
+		extGlobalMap.put(name, function);
 	}
 	
 	public void execute(List<Order> orders) throws Exception{
+		execute(orders, null);
+	}
+	
+	public void execute(List<Order> orders, ExecutionContext context) throws Exception{
 		int curr = 0;
+		
+		//为函数初始化执行上下文
+		if(null == context){
+			if(null == globalExecutionContext){
+				currentExecutionContext = globalExecutionContext;
+			}else{
+				currentExecutionContext = new ExecutionContext(globalExecutionContext.getScopeChain());
+			}
+		}else{
+			currentExecutionContext = context;
+		}
+		
 		while(true){
 			if(curr >= orders.size()){
-				throw new Exception("非正常的结束");
+				if(currentExecutionContext == globalExecutionContext )
+					throw new Exception("非正常的结束");
+				break;
 			}
 			Order p = orders.get(curr);
 			switch (p.op) {
 				case PUSH:
+					//特殊处理
+					if(p.value.equals("funcBegin")){
+						scanFunction(orders);
+						curr--;
+					}else if(p.value.equals("return")){
+						//return的处理没能完成
+					}else
 						vmStack.push(p.value);
 					break;
-				case STOREGLOBAL:{
-					//保存值到全局表中
-					globalMap.put(p.value.toString(), vmStack.pop());
+				case STOREVAR:{
+					//保存值到当前作用域中
+					currentExecutionContext.setVariableObject(p.value.toString(), vmStack.pop());
 					break;
 				}
-				case PUSHGLOBAL:{
-					//从全局表中取值
+				case PUSHVAR:{
+					//从当前作用域中取值
 					String key = p.value.toString();
-					Object val = globalMap.get(key);
+					Object val = currentExecutionContext.getVariableObject(key);
 					if(null == val){
-						throw new Exception(String.format("在第%d行的‘%s’ 未声明。", p.lineNo, key));
+						//从特殊映射表中再查一次
+						val = extGlobalMap.get(key);
+						if(null == val)
+							throw new Exception(String.format("在第%d行的‘%s’ 未声明。", p.lineNo, key));
 					}
 					vmStack.push(val);
 					break;
@@ -185,7 +229,7 @@ public class StackVM {
 				case CALLFUNC:{
 					Object funcObj = vmStack.pop();
 					if(null == funcObj || !(funcObj instanceof IFunction)){
-						throw new Exception(String.format("在第%d行的‘%s’ 调用的函数未声明。", p.lineNo));
+						throw new Exception(String.format("在第%d行的‘%s’ 调用的函数未声明。", p.lineNo, p.value.toString()));
 					}
 					IFunction m = (IFunction)funcObj;
 					List<FunctionValue> args = new ArrayList<>();
@@ -204,16 +248,18 @@ public class StackVM {
 							value = new FunctionValue((int)val);
 						}else if(val instanceof String){
 							value = new FunctionValue((String)val);
+						}else if(val instanceof FunctionValue){
+							value = (FunctionValue)val;
 						}
 						if(null == value){
-							throw new Exception("调用函数，参数错误");
+							throw new Exception(String.format("在第%d行 调用函数，参数错误。", p.lineNo));
 						}
 						args.add(value);
 					}
-					
+					//参数的声明顺序在此处需要反转
 					FunctionValue fs[] = new FunctionValue[args.size()];
-					for(int i=0; i < args.size(); i++){
-						fs[i] = args.get(i);
+					for(int i = 0; i < args.size() ; i++){
+						fs[i] = args.get(args.size() - 1 - i);
 					}
 					FunctionValue ret = m.invoke(fs); //调用函数
 					if(null != ret){
@@ -225,6 +271,7 @@ public class StackVM {
 							vmStack.push(ret.getStrVal());
 							break;
 						case LIST:
+							vmStack.push(ret);
 							break;
 
 						default:
@@ -246,6 +293,80 @@ public class StackVM {
 					break;
 			}
 			curr++;
+		}//end:while
+		if(context == null && currentExecutionContext != globalExecutionContext){
+			List<ExecutionContext> scopeChain = globalExecutionContext.getScopeChain();
+			scopeChain.remove(scopeChain.size() - 1);
+			currentExecutionContext = scopeChain.get(scopeChain.size() - 1);
 		}
 	}
+	
+	//扫描流程中的函数，将其填充到当前的执行上下文的局部作用域中
+	private void scanFunction(List<Order> orders){
+		Order funcName = null;
+		int startPos = -1;
+		int endPos = -1;
+		int skipCount = 0; //可能存在闭包，需要跳过方法中的方法
+		for(int i = 0; i < orders.size(); i++){
+			Order order = orders.get(i);
+			if(order.value.equals("funcBegin")){
+				if(-1 == startPos){
+					startPos = i;
+				}else{
+					skipCount++;
+					continue;
+				}
+			}
+			if(order.value.equals("funcEnd")){
+				if(0 == skipCount){
+					endPos = i;
+					//break;
+				}
+				skipCount--;
+			}else{
+				//方法之后的一位必然是函数名
+				if(endPos > 0  && orders.get(i).op == OrderOpType.PUSHVAR){
+					funcName = orders.get(i);
+					break;
+				}
+			}
+		}
+		
+		if(null != funcName && startPos > -1 && endPos > startPos){
+			List<Order> funcOrders = orders.subList(startPos+1, endPos); //不保留funcBegin和funcEnd
+			currentExecutionContext.setVariableObject(funcName.value.toString(), 
+													  new Function(new ArrayList<>(funcOrders), 
+													  currentExecutionContext.getAllVariableObjects())); 
+			//清除指令集中的方法定义
+			orders.removeAll(funcOrders);
+			//删除 funcBegin、funcEnd、函数名
+			orders.remove(startPos);
+			orders.remove(startPos);
+			orders.remove(startPos);
+			orders = new ArrayList<>(orders); //被修改后的list不能再次操作，暂时先这么做。
+		}
+	}
+	
+	class Function implements IFunction{
+		private List<Order> funcOrders;
+		private ExecutionContext tmpContext = null;
+		
+		public Function(List<Order> funcOrders, Map<String, Object> tmpVariableObjects) {
+			super();
+			this.funcOrders = funcOrders;
+			this.tmpContext = new ExecutionContext(globalExecutionContext.getScopeChain(), tmpVariableObjects);
+		}
+
+		@Override
+		public FunctionValue invoke(FunctionValue... obj) throws ExecureException {
+			try {
+				vm.execute(funcOrders, tmpContext);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return null; //暂时：返回值在栈上，所以无需返回
+		}
+		
+	}
+	
 }

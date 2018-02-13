@@ -14,7 +14,7 @@ import main.java.com.parser.nonterminal.IParser;
 import main.java.com.vm.Order;
 import main.java.com.vm.StackVM;
 
-public class TestFunction {
+public class TestExtFunction {
 	private static void printTree(ASTree tree) throws Exception{
 		if(null == tree) return;
 		for(int i = 0; i < tree.numChildren(); i++){
@@ -31,17 +31,17 @@ public class TestFunction {
 			factory.initNonterminal();
 			IParser stat = factory.getParser();
 			
-			Lexer lexer = new Lexer(new BufferedReader(new FileReader("function.rock")));
+			Lexer lexer = new Lexer(new BufferedReader(new FileReader("extFunction.rock")));
 			ASTree tree = new ASTree();
 			if(stat.parser(lexer, tree)){
-				//printTree(tree);
+				printTree(tree);
 			}
-			//System.out.println("\n");
+			System.out.println("\n");
 			
 			new FixTree().fixTree(tree);
 			List<Order> os = new Translator().translate(tree);
-			//System.out.println(os);
-			//System.out.println("");
+			System.out.println(os);
+			System.out.println("");
 			
 			StackVM vm = new StackVM();
 			vm.registerFunction("print", new PrintFunction());

@@ -14,7 +14,7 @@ public class FunctionValue {
 	private valueType type;
 	private int intVal;
 	private String strVal;
-	private List<Object> listVal;
+	private List<FunctionValue> listVal;
 	
 	public FunctionValue(int intVal) {
 		this.intVal = intVal;
@@ -24,7 +24,7 @@ public class FunctionValue {
 		this.strVal = strVal;
 		type = valueType.STRING;
 	}
-	public FunctionValue(List<Object> listVal) {
+	public FunctionValue(List<FunctionValue> listVal) {
 		this.listVal = listVal;
 		type = valueType.LIST;
 	}
@@ -46,10 +46,10 @@ public class FunctionValue {
 		this.strVal = strVal;
 		type = valueType.STRING;
 	}
-	public List<Object> getListVal() {
+	public List<FunctionValue> getListVal() {
 		return listVal;
 	}
-	public void setListVal(List<Object> listVal) {
+	public void setListVal(List<FunctionValue> listVal) {
 		this.listVal = listVal;
 		type = valueType.LIST;
 	}

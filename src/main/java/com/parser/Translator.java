@@ -26,7 +26,7 @@ public class Translator {
 			}else if(t.isString()){
 				orders.add(new Order(t.getLineNumber(), Order.OrderOpType.PUSH, t.getText()));
 			}else if(t.isNouns()){
-				orders.add(new Order(t.getLineNumber(), Order.OrderOpType.PUSHGLOBAL, t.getText()));
+				orders.add(new Order(t.getLineNumber(), Order.OrderOpType.PUSHVAR, t.getText()));
 			}else if(t.isIdentifier()){
 				switch (t.getText()) {
 				case "begin":{
@@ -98,11 +98,11 @@ public class Translator {
 					break;
 				}
 				case "entrust":{
-					orders.get(orders.size()-1).op = Order.OrderOpType.STOREGLOBAL;
+					orders.get(orders.size()-1).op = Order.OrderOpType.STOREVAR;
 					break;
 				}
 				case "push":{
-					orders.get(orders.size()-1).op = Order.OrderOpType.PUSHGLOBAL;
+					orders.get(orders.size()-1).op = Order.OrderOpType.PUSHVAR;
 					break;
 				}
 				case "mark":{
